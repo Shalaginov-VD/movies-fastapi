@@ -8,6 +8,7 @@ import shutil
 from datetime import datetime
 import time
 from fastapi.staticfiles import StaticFiles
+from auth import basic_auth
 
 app = FastAPI()
 
@@ -26,7 +27,7 @@ def get_movie(id: int, db: Session = Depends(get_db)):
     return movie
 
 @app.post("/movies", response_model=PYD.SchemeMovie)
-def create_movie(Movie: PYD.CreateMovie, db: Session = Depends(get_db)):
+def create_movie(Movie: PYD.CreateMovie, db: Session = Depends(get_db), user: models.User = Depends(basic_auth)):
     genres = db.query(models.Genre).filter(models.Genre.id.in_(Movie.genre_ids)).all()
     if len(genres) != len(Movie.genre_ids):
         raise HTTPException(404, detail="Некоторые жанры не найдены")
@@ -50,6 +51,7 @@ def update_movie(
     id: int,
     movie_update: PYD.UpdateMovie,
     db: Session = Depends(get_db),
+    user: models.User = Depends(basic_auth),
 ):
     movie = db.query(models.Movie).filter(models.Movie.id == id).first()
     if not movie:
@@ -67,7 +69,7 @@ def update_movie(
     return movie
 
 @app.put("/movies/{id}/image", response_model=PYD.SchemeMovie)
-def update_movie_poster(id: int, image: UploadFile, db: Session = Depends(get_db)):
+def update_movie_poster(id: int, image: UploadFile, db: Session = Depends(get_db), user: models.User = Depends(basic_auth)):
     movie_db = (
         db.query(models.Movie).filter(models.Movie.id == id).first()
     )
@@ -89,7 +91,7 @@ def update_movie_poster(id: int, image: UploadFile, db: Session = Depends(get_db
     return movie_db
 
 @app.delete("/movies/{id}")
-def delete_movie(id: int, db: Session = Depends(get_db)):
+def delete_movie(id: int, db: Session = Depends(get_db), user: models.User = Depends(basic_auth)):
     movie = db.query(models.Movie).filter(models.Movie.id == id).first()
     if not movie:
         raise HTTPException(404, detail="Фильм не найден")
@@ -102,7 +104,7 @@ def get_genres(db: Session = Depends(get_db)):
     return db.query(models.Genre).all()
 
 @app.post("/genres", response_model=PYD.BaseGenre)
-def create_genre(genre: PYD.CreateGenre, db: Session = Depends(get_db)):
+def create_genre(genre: PYD.CreateGenre, db: Session = Depends(get_db), user: models.User = Depends(basic_auth)):
     existing = db.query(models.Genre).filter(models.Genre.name == genre.name).first()
     if existing:
         raise HTTPException(400, detail="Жанр с таким именем уже существует")
@@ -111,3 +113,16 @@ def create_genre(genre: PYD.CreateGenre, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(new_genre)
     return new_genre
+
+@app.post("/user", response_model=PYD.BaseUser)
+def user_reg(create_user: PYD.CreateUser, db: Session = Depends(get_db)):
+    user_db = db.query(models.User).filter(models.User.username == create_user.username).first()
+    if user_db:
+        raise HTTPException(400, "Логин занят")
+    user_db = models.User()
+    user_db.username = create_user.username
+    user_db.passwrod = create_user.password
+    user_db.email = create_user.email
+    db.add(user_db)
+    db.commit()
+    return user_db

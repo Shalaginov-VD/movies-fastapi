@@ -2,6 +2,7 @@ from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Tab
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from database import Base
+from sqlalchemy.sql import func
 
 movie_genres = Table(
     'movie_genres',
@@ -31,3 +32,11 @@ class Movie(Base):
     date_added = Column(DateTime, default=datetime.utcnow)
 
     genres = relationship("Genre", secondary=movie_genres, back_populates="movies")
+
+class User(Base):
+    __tablename__ = "users"
+    id = Column(Integer(), primary_key=True, autoincrement=True, nullable=False)
+    username = Column(String(60), nullable=False, unique=True)
+    passwrod = Column(String(255), nullable=False)
+    email = Column(String(255), nullable=True)
+    created_at = Column(DateTime(), server_default=func.now())

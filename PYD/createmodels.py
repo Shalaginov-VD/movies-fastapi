@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, EmailStr
 from typing import List
 
 class CreateMovie(BaseModel):
@@ -12,3 +12,8 @@ class CreateMovie(BaseModel):
 class CreateGenre(BaseModel):
     name: str = Field(example="Драма")
     description: str = Field(None, example="Драматические фильмы")
+
+class CreateUser(BaseModel):
+    username: str = Field(example="Denis123", min_length=3, max_length=60)
+    password: str = Field(example="qwerty123", min_length=8, max_length=60)
+    email: EmailStr | None = Field(None)

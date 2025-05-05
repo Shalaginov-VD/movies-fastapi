@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, HttpUrl
+from pydantic import BaseModel, Field, HttpUrl, EmailStr
 from datetime import datetime
 from typing import List, Optional
 
@@ -17,3 +17,8 @@ class BaseMovie(BaseModel):
     description: str = Field(min_length=10, max_length=1000, example="В первом и последнем плавании шикарного Титаника встречаются двое.")
     poster_url: Optional[str] = None
     date_added: datetime
+
+class BaseUser(BaseModel):
+    id: int
+    username: str = Field(example="Denis123")
+    email: EmailStr | None = Field(None, example="test@mail.ru")
