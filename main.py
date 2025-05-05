@@ -9,6 +9,7 @@ from datetime import datetime
 import time
 from fastapi.staticfiles import StaticFiles
 from auth import basic_auth
+import re
 
 app = FastAPI()
 
@@ -119,6 +120,15 @@ def user_reg(create_user: PYD.CreateUser, db: Session = Depends(get_db)):
     user_db = db.query(models.User).filter(models.User.username == create_user.username).first()
     if user_db:
         raise HTTPException(400, "Логин занят")
+    if not re.match(r'^[A-Za-z0-9]{4,}$', create_user.username):
+        raise HTTPException(400, "Логин должен содержать минимум 4 символа и состоять из букв и цифр")
+    email_regex = r'^[\w\.-]+@[\w\.-]+\.\w+$'
+    if not re.match(email_regex, create_user.email):
+        raise HTTPException(400, "Неккоректный формат email")
+    if len(create_user.password) < 8:
+        raise HTTPException(400, "Пароль должен быть не менее 8 символов")
+    if not re.search(r'[A-Za-z]', create_user.password) or not re.search(r'[0-9]', create_user.password):
+        raise HTTPException(400, "Пароль должен содержать буквы и цифры")
     user_db = models.User()
     user_db.username = create_user.username
     user_db.passwrod = create_user.password
